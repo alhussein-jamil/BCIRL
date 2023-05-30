@@ -1,0 +1,87 @@
+env_settings: {}
+obs_shape: ???
+action_dim: ???
+total_num_updates: ???
+action_is_discrete: ???
+num_steps: 128
+num_envs: 32
+device: cpu
+only_eval: false
+seed: 3
+num_eval_episodes: 100
+num_env_steps: 10000000.0
+recurrent_hidden_state_size: 128
+gamma: 0.99
+log_interval: 1
+eval_interval: 500
+save_interval: 100000000000
+load_checkpoint: ./data/checkpoints/530-3-OyeWQV/ckpt.3905.pth
+load_policy: true
+resume_training: false
+policy:
+  _target_: imitation_learning.policy_opt.policy.Policy
+  hidden_size: 128
+  recurrent_hidden_size: 128
+  is_recurrent: false
+  obs_shape: ${obs_shape}
+  action_dim: ${action_dim}
+  action_is_discrete: ${action_is_discrete}
+  std_init: 0.0
+  num_envs: ${num_envs}
+policy_updater:
+  _target_: imitation_learning.policy_opt.ppo.PPO
+  _recursive_: false
+  use_clipped_value_loss: true
+  clip_param: 0.2
+  value_loss_coef: 0.5
+  entropy_coef: 0.0001
+  max_grad_norm: 0.5
+  num_epochs: 2
+  num_mini_batch: 4
+  num_envs: ${num_envs}
+  num_steps: ${num_steps}
+  gae_lambda: 0.95
+  gamma: ${gamma}
+  optimizer_params:
+    _target_: torch.optim.Adam
+    lr: 0.0003
+logger:
+  _target_: rl_utils.logging.Logger
+  _recursive_: false
+  run_name: ''
+  seed: ${seed}
+  log_dir: ./data/vids/
+  vid_dir: ./data/vids/
+  save_dir: ./data/checkpoints/
+  smooth_len: 10
+  group_name: ''
+env:
+  env_name: PointMassObstacle-v0
+  env_settings:
+    params:
+      _target_: rl_utils.envs.pointmass.PointMassObstacleParams
+      start_state_noise: 0.05
+      dt: 0.05
+      ep_horizon: 50
+      start_idx: 0
+      square_obstacles:
+      - _target_: rl_utils.envs.pointmass.SquareObstacle
+        xy:
+        - 0.5
+        - 0.5
+        width: 0.44
+        height: 0.1
+        rot_deg: -45.0
+      custom_reward:
+        _target_: common.pointmass_utils.PMDistActionPenReward
+        slack: 0.01
+        action_pen: 0.05
+        succ_dist: 0.05
+    set_eval: false
+evaluator:
+  _target_: imitation_learning.common.evaluator.Evaluator
+  rnn_hxs_dim: ${policy.recurrent_hidden_size}
+  num_render: 0
+  fps: 10
+  save_traj_name: null
+meta_irl: pointmass
